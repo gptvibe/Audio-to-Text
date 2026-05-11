@@ -1,8 +1,8 @@
 #define MyAppName "QuietScribe"
-#define MyAppVersion "0.1.3"
+#define MyAppVersion "0.1.4"
 #define MyAppPublisher "gptvibe"
 #define MyAppExeName "QuietScribe.exe"
-#define PortableDir "..\artifacts\portable\QuietScribe-win-x64"
+#define PublishDir "..\artifacts\publish\QuietScribe-win-x64"
 
 [Setup]
 AppId={{8A96198A-447E-4422-88F7-75F3B4B2E875}
@@ -30,7 +30,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "{#PortableDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

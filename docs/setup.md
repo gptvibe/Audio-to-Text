@@ -22,10 +22,10 @@ dotnet run --project src/App.Desktop/App.Desktop.csproj -p:RuntimeIdentifier=win
 
 This produces:
 
-- `artifacts\release\QuietScribe-v0.1.3-win-x64-setup.exe`
-- `artifacts\release\QuietScribe-v0.1.3-win-x64-portable.zip`
+- `artifacts\release\QuietScribe-v0.1.4-win-x64-setup.exe`
+- `artifacts\release\QuietScribe-v0.1.4-win-x64-portable.zip`
 
-Both include an embedded Python runtime with the core `faster-whisper` stack installed. The portable zip has a clean root with only `QuietScribe.exe` plus an `App` folder. The app prefers `workers\transcription-worker\python\python.exe` automatically.
+Both include an embedded Python runtime with the core `faster-whisper` stack installed. The portable zip uses the standard .NET/WinUI publish layout to avoid the custom launcher that could trigger Smart App Control on some machines. Open `QuietScribe.exe` from the extracted folder. The app prefers `workers\transcription-worker\python\python.exe` automatically.
 
 ## Python worker for development
 

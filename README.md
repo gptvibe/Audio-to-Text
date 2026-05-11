@@ -38,7 +38,7 @@ Build release artifacts with the bundled runtime:
 .\scripts\build-release.ps1
 ```
 
-The portable zip is arranged for non-technical users: `QuietScribe.exe` sits at the root, while DLLs, JSON files, and the bundled worker runtime live inside the `App` folder.
+The portable zip uses the standard .NET/WinUI publish layout so Windows security features see the same app executable that was built by the desktop project. Open `QuietScribe.exe` from the extracted folder.
 
 ## Build
 

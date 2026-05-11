@@ -8,6 +8,10 @@ Add a Hugging Face token in Settings, then confirm your Hugging Face account has
 
 Use the v0.1.1 or newer setup/portable release. It includes `workers\transcription-worker\python\python.exe` and the app uses that runtime automatically.
 
+## Smart App Control blocks the portable app
+
+Use v0.1.4 or newer. v0.1.3 used a custom portable launcher that could be blocked by Smart App Control on some Windows 11 systems. v0.1.4 returns to the standard .NET/WinUI portable layout used by v0.1.0 through v0.1.2.
+
 ## faster-whisper is not installed
 
 This means the release runtime is incomplete or you are running from source without installing worker dependencies. For source builds, run:
