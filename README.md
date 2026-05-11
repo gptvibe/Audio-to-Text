@@ -38,7 +38,7 @@ Build release artifacts with the bundled runtime:
 .\scripts\build-release.ps1
 ```
 
-The portable zip uses the standard .NET/WinUI publish layout so Windows security features see the same app executable that was built by the desktop project. Open `QuietScribe.exe` from the extracted folder.
+Public releases are portable-only for now because unsigned setup installers can be blocked by Windows Smart App Control. The portable zip uses the standard .NET/WinUI publish layout so Windows security features see the same app executable that was built by the desktop project. Open `QuietScribe.exe` from the extracted folder.
 
 ## Build
 

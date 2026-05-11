@@ -11,7 +11,7 @@
   <Identity
     Name="gptvibe.QuietScribe"
     Publisher="CN=gptvibe"
-    Version="0.1.5.0" />
+    Version="0.1.6.0" />
 
   <mp:PhoneIdentity PhoneProductId="79A59E0A-8956-44AF-81F2-66B971EAAE15" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 

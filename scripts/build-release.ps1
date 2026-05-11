@@ -1,6 +1,7 @@
 param(
-    [string]$Version = "0.1.5",
-    [string]$PythonVersion = "3.12.10"
+    [string]$Version = "0.1.6",
+    [string]$PythonVersion = "3.12.10",
+    [switch]$BuildSetup
 )
 
 $ErrorActionPreference = "Stop"
@@ -82,10 +83,15 @@ if (Test-Path -LiteralPath $portableZip) {
 }
 Compress-Archive -Path (Join-Path $publishDir "*") -DestinationPath $portableZip -Force
 
-& "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" (Join-Path $repoRoot "installer\QuietScribe.iss")
+if ($BuildSetup) {
+    & "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" (Join-Path $repoRoot "installer\QuietScribe.iss")
 
-if (!(Test-Path -LiteralPath $setupExe)) {
-    throw "Expected installer was not produced: $setupExe"
+    if (!(Test-Path -LiteralPath $setupExe)) {
+        throw "Expected installer was not produced: $setupExe"
+    }
+}
+elseif (Test-Path -LiteralPath $setupExe) {
+    Remove-Item -LiteralPath $setupExe -Force
 }
 
 Get-ChildItem -LiteralPath $releaseDir -Filter "QuietScribe-v$Version-win-x64-*" |

@@ -22,10 +22,15 @@ dotnet run --project src/App.Desktop/App.Desktop.csproj -p:RuntimeIdentifier=win
 
 This produces:
 
-- `artifacts\release\QuietScribe-v0.1.5-win-x64-setup.exe`
-- `artifacts\release\QuietScribe-v0.1.5-win-x64-portable.zip`
+- `artifacts\release\QuietScribe-v0.1.6-win-x64-portable.zip`
 
-Both include an embedded Python runtime with the core `faster-whisper` stack installed. The portable zip uses the standard .NET/WinUI publish layout to avoid the custom launcher that could trigger Smart App Control on some machines. Open `QuietScribe.exe` from the extracted folder. The app prefers `workers\transcription-worker\python\python.exe` automatically.
+The portable zip includes an embedded Python runtime with the core `faster-whisper` stack installed. It uses the standard .NET/WinUI publish layout to avoid the custom launcher that could trigger Smart App Control on some machines. Open `QuietScribe.exe` from the extracted folder. The app prefers `workers\transcription-worker\python\python.exe` automatically.
+
+Unsigned setup installers can be blocked by Windows Smart App Control, so public releases are portable-only until QuietScribe has code signing. To build a local unsigned installer anyway, run:
+
+```powershell
+.\scripts\build-release.ps1 -BuildSetup
+```
 
 The setup installer always creates a Start Menu shortcut. The desktop shortcut is an optional checkbox in the installer and is off by default.
 

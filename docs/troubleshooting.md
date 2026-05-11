@@ -12,6 +12,10 @@ Use the v0.1.1 or newer setup/portable release. It includes `workers\transcripti
 
 Use v0.1.4 or newer. v0.1.3 used a custom portable launcher that could be blocked by Smart App Control on some Windows 11 systems. v0.1.4 and newer return to the standard .NET/WinUI portable layout used by v0.1.0 through v0.1.2.
 
+## Smart App Control blocks the setup installer
+
+Use the portable zip. QuietScribe setup installers are unsigned, and Smart App Control can block unsigned installers even when the portable app itself works. Public releases are portable-only until code signing is available.
+
 ## faster-whisper is not installed
 
 This means the release runtime is incomplete or you are running from source without installing worker dependencies. For source builds, run:

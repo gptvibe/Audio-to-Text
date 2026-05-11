@@ -1,8 +1,11 @@
 using System;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using WinRT.Interop;
 using App_Desktop.Pages;
 using App.Models.Domain;
 
@@ -20,9 +23,33 @@ public sealed partial class MainWindow : Window
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
         AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
-        AppWindow.SetIcon("Assets/AppIcon.ico");
+        ApplyWindowIcon();
         NavFrame.Navigate(typeof(HomePage));
         RootGrid.Loaded += MainWindow_Loaded;
+    }
+
+    private void ApplyWindowIcon()
+    {
+        var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
+        if (!File.Exists(iconPath))
+        {
+            return;
+        }
+
+        AppWindow.SetIcon(iconPath);
+
+        var hwnd = WindowNative.GetWindowHandle(this);
+        SetIcon(hwnd, IconSize.Small, iconPath);
+        SetIcon(hwnd, IconSize.Large, iconPath);
+    }
+
+    private static void SetIcon(IntPtr hwnd, IconSize size, string iconPath)
+    {
+        var icon = LoadImage(IntPtr.Zero, iconPath, ImageIcon, 0, 0, LoadFromFile | DefaultSize | SharedIcon);
+        if (icon != IntPtr.Zero)
+        {
+            SendMessage(hwnd, SetWindowIcon, new IntPtr((int)size), icon);
+        }
     }
 
     private void TitleBar_PaneToggleRequested(TitleBar sender, object args)
@@ -62,6 +89,8 @@ public sealed partial class MainWindow : Window
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
+        ApplyWindowIcon();
+
         var settings = await AppServices.Settings.LoadAsync();
         ApplyTheme(settings.Theme);
 
@@ -150,4 +179,28 @@ public sealed partial class MainWindow : Window
             await AppServices.Settings.SaveAsync(settings with { HasCompletedOnboarding = true });
         }
     }
+
+    private enum IconSize
+    {
+        Small = 0,
+        Large = 1
+    }
+
+    private const int SetWindowIcon = 0x0080;
+    private const int ImageIcon = 1;
+    private const int LoadFromFile = 0x00000010;
+    private const int DefaultSize = 0x00000040;
+    private const int SharedIcon = 0x00008000;
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern IntPtr LoadImage(
+        IntPtr instance,
+        string name,
+        int type,
+        int desiredWidth,
+        int desiredHeight,
+        int loadFlags);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr SendMessage(IntPtr windowHandle, int message, IntPtr wParam, IntPtr lParam);
 }
