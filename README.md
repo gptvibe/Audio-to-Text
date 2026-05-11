@@ -38,6 +38,8 @@ Build release artifacts with the bundled runtime:
 .\scripts\build-release.ps1
 ```
 
+The portable zip is arranged for non-technical users: `QuietScribe.exe` sits at the root, while DLLs, JSON files, and the bundled worker runtime live inside the `App` folder.
+
 ## Build
 
 ```powershell

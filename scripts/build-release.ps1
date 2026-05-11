@@ -1,5 +1,5 @@
 param(
-    [string]$Version = "0.1.2",
+    [string]$Version = "0.1.3",
     [string]$PythonVersion = "3.12.10"
 )
 
@@ -7,6 +7,8 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $publishDir = Join-Path $repoRoot "artifacts\publish\QuietScribe-win-x64"
+$launcherDir = Join-Path $repoRoot "artifacts\launcher\QuietScribe-win-x64"
+$portableDir = Join-Path $repoRoot "artifacts\portable\QuietScribe-win-x64"
 $releaseDir = Join-Path $repoRoot "artifacts\release"
 $cacheDir = Join-Path $repoRoot "artifacts\cache"
 $workerDir = Join-Path $publishDir "workers\transcription-worker"
@@ -25,6 +27,8 @@ function Remove-DirectoryIfExists([string]$Path) {
 
 New-Item -ItemType Directory -Force -Path $releaseDir, $cacheDir | Out-Null
 Remove-DirectoryIfExists $publishDir
+Remove-DirectoryIfExists $launcherDir
+Remove-DirectoryIfExists $portableDir
 
 dotnet publish (Join-Path $repoRoot "src\App.Desktop\App.Desktop.csproj") `
     -c Release `
@@ -36,6 +40,15 @@ dotnet publish (Join-Path $repoRoot "src\App.Desktop\App.Desktop.csproj") `
     -p:PublishTrimmed=false `
     -p:Version=$Version `
     -o $publishDir
+
+dotnet publish (Join-Path $repoRoot "src\App.Launcher\App.Launcher.csproj") `
+    -c Release `
+    -r win-x64 `
+    -p:PublishAot=true `
+    -p:SelfContained=true `
+    -p:StripSymbols=true `
+    -p:Version=$Version `
+    -o $launcherDir
 
 if (!(Test-Path -LiteralPath $pythonZip)) {
     $pythonUrl = "https://www.python.org/ftp/python/$PythonVersion/python-$PythonVersion-embed-amd64.zip"
@@ -77,10 +90,14 @@ if (Test-Path -LiteralPath $releaseNotes) {
     Copy-Item -LiteralPath $releaseNotes -Destination (Join-Path $publishDir "RELEASE-NOTES.txt") -Force
 }
 
+New-Item -ItemType Directory -Force -Path $portableDir | Out-Null
+Copy-Item -LiteralPath (Join-Path $launcherDir "QuietScribe.exe") -Destination (Join-Path $portableDir "QuietScribe.exe") -Force
+Copy-Item -LiteralPath $publishDir -Destination (Join-Path $portableDir "App") -Recurse -Force
+
 if (Test-Path -LiteralPath $portableZip) {
     Remove-Item -LiteralPath $portableZip -Force
 }
-Compress-Archive -Path (Join-Path $publishDir "*") -DestinationPath $portableZip -Force
+Compress-Archive -Path (Join-Path $portableDir "*") -DestinationPath $portableZip -Force
 
 & "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" (Join-Path $repoRoot "installer\QuietScribe.iss")
 
