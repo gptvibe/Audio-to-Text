@@ -27,6 +27,7 @@ public sealed partial class HomePage : Page
     private TranscriptDocument? _currentTranscript;
     private string? _currentHistoryId;
     private bool _hasLoaded;
+    private readonly List<TranscriptSegment> _streamingSegments = [];
 
     public HomePage()
     {
@@ -214,16 +215,19 @@ public sealed partial class HomePage : Page
         TaskProgressBar.IsIndeterminate = false;
         TranscriptTextBox.Text = string.Empty;
         SpeakerNamesPanel.Children.Clear();
+        _streamingSegments.Clear();
 
         try
         {
             var options = CreateTranscriptionOptions();
             var progress = new Progress<TranscriptionProgress>(UpdateProgress);
+            var segmentProgress = new Progress<TranscriptSegment>(segment => AppendStreamingSegment(segment, options));
             _currentTranscript = await _transcriptionClient.TranscribeFileAsync(
                 _selectedFilePath,
                 _selectedLocalModel.LocalPath,
                 options,
                 progress,
+                segmentProgress,
                 _transcriptionCts.Token);
 
             RenderTranscript();
@@ -246,6 +250,32 @@ public sealed partial class HomePage : Page
             CancelButton.IsEnabled = false;
             UpdateStartButton();
         }
+    }
+
+    private void AppendStreamingSegment(TranscriptSegment segment, TranscriptionOptions options)
+    {
+        if (string.IsNullOrWhiteSpace(segment.Text))
+        {
+            return;
+        }
+
+        _streamingSegments.Add(segment);
+        _currentTranscript = new TranscriptDocument
+        {
+            SourcePath = _selectedFilePath,
+            SourceName = _selectedFilePath is null ? null : Path.GetFileName(_selectedFilePath),
+            ModelRepoId = options.ModelRepoId,
+            Language = options.Language,
+            Segments = _streamingSegments.ToList(),
+            SpeakerNames = BuildSpeakerNames(_streamingSegments)
+        };
+
+        var mode = OutputModeComboBox.SelectedItem is TranscriptOutputMode outputMode
+            ? outputMode
+            : options.OutputMode;
+        TranscriptTextBox.Text = _exportService.FormatTranscript(_currentTranscript, mode);
+        TranscriptTextBox.SelectionStart = TranscriptTextBox.Text.Length;
+        TranscriptTextBox.SelectionLength = 0;
     }
 
     private void CancelTranscription_Click(object sender, RoutedEventArgs e)
@@ -371,6 +401,7 @@ public sealed partial class HomePage : Page
     {
         _currentTranscript = null;
         _currentHistoryId = null;
+        _streamingSegments.Clear();
         TranscriptTextBox.Text = string.Empty;
         SpeakerNamesPanel.Children.Clear();
         CurrentTaskTextBlock.Text = "Ready";
@@ -480,6 +511,15 @@ public sealed partial class HomePage : Page
         StartButton.IsEnabled = _transcriptionCts is null
             && !string.IsNullOrWhiteSpace(_selectedFilePath)
             && _selectedLocalModel?.Status == ModelDownloadStatus.Downloaded;
+    }
+
+    private static IReadOnlyDictionary<string, string> BuildSpeakerNames(IEnumerable<TranscriptSegment> segments)
+    {
+        return segments
+            .Select(segment => segment.Speaker)
+            .Where(speaker => !string.IsNullOrWhiteSpace(speaker))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(speaker => speaker!, speaker => speaker!, StringComparer.OrdinalIgnoreCase);
     }
 
     private async Task ShowErrorAsync(string title, string message)

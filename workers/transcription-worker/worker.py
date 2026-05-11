@@ -134,6 +134,7 @@ def transcribe(args: argparse.Namespace) -> None:
                 "text": segment.text.strip(),
             }
             segments.append(item)
+            emit({"event": "segment", "segment": item})
 
             if duration and duration > 0:
                 percent = 28 + min(58, (float(segment.end) / float(duration)) * 58)

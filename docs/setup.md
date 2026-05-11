@@ -22,8 +22,8 @@ dotnet run --project src/App.Desktop/App.Desktop.csproj -p:RuntimeIdentifier=win
 
 This produces:
 
-- `artifacts\release\QuietScribe-v0.1.1-win-x64-setup.exe`
-- `artifacts\release\QuietScribe-v0.1.1-win-x64-portable.zip`
+- `artifacts\release\QuietScribe-v0.1.2-win-x64-setup.exe`
+- `artifacts\release\QuietScribe-v0.1.2-win-x64-portable.zip`
 
 Both include an embedded Python runtime with the core `faster-whisper` stack installed. The app prefers `workers\transcription-worker\python\python.exe` automatically.
 

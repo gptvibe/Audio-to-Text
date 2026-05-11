@@ -9,5 +9,6 @@ public interface ITranscriptionClient
         string modelPath,
         TranscriptionOptions options,
         IProgress<TranscriptionProgress>? progress = null,
+        IProgress<TranscriptSegment>? segmentProgress = null,
         CancellationToken cancellationToken = default);
 }

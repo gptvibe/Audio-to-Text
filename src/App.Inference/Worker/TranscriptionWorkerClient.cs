@@ -22,6 +22,7 @@ public sealed class TranscriptionWorkerClient : ITranscriptionClient
         string modelPath,
         TranscriptionOptions options,
         IProgress<TranscriptionProgress>? progress = null,
+        IProgress<TranscriptSegment>? segmentProgress = null,
         CancellationToken cancellationToken = default)
     {
         if (!File.Exists(sourcePath))
@@ -83,10 +84,15 @@ public sealed class TranscriptionWorkerClient : ITranscriptionClient
         var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
         TranscriptDocument? transcript = null;
 
-        while (!process.StandardOutput.EndOfStream)
+        while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var line = await process.StandardOutput.ReadLineAsync(cancellationToken);
+            if (line is null)
+            {
+                break;
+            }
+
             if (string.IsNullOrWhiteSpace(line))
             {
                 continue;
@@ -100,6 +106,9 @@ public sealed class TranscriptionWorkerClient : ITranscriptionClient
             {
                 case "progress":
                     progress?.Report(ParseProgress(root));
+                    break;
+                case "segment":
+                    segmentProgress?.Report(ParseSegment(root));
                     break;
                 case "result":
                     transcript = ParseTranscript(root, sourcePath, options);
@@ -206,20 +215,7 @@ public sealed class TranscriptionWorkerClient : ITranscriptionClient
         {
             foreach (var segmentElement in segmentsElement.EnumerateArray())
             {
-                var text = segmentElement.TryGetProperty("text", out var textElement)
-                    ? textElement.GetString() ?? string.Empty
-                    : string.Empty;
-                var start = segmentElement.TryGetProperty("start", out var startElement) && startElement.TryGetDouble(out var startSeconds)
-                    ? TimeSpan.FromSeconds(startSeconds)
-                    : (TimeSpan?)null;
-                var end = segmentElement.TryGetProperty("end", out var endElement) && endElement.TryGetDouble(out var endSeconds)
-                    ? TimeSpan.FromSeconds(endSeconds)
-                    : (TimeSpan?)null;
-                var speaker = segmentElement.TryGetProperty("speaker", out var speakerElement)
-                    ? speakerElement.GetString()
-                    : null;
-
-                segments.Add(new TranscriptSegment { Start = start, End = end, Speaker = speaker, Text = text });
+                segments.Add(ParseSegmentElement(segmentElement));
             }
         }
 
@@ -237,6 +233,34 @@ public sealed class TranscriptionWorkerClient : ITranscriptionClient
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(speaker => speaker!, speaker => speaker!, StringComparer.OrdinalIgnoreCase)
         };
+    }
+
+    private static TranscriptSegment ParseSegment(JsonElement root)
+    {
+        if (root.TryGetProperty("segment", out var segmentElement))
+        {
+            return ParseSegmentElement(segmentElement);
+        }
+
+        return ParseSegmentElement(root);
+    }
+
+    private static TranscriptSegment ParseSegmentElement(JsonElement segmentElement)
+    {
+        var text = segmentElement.TryGetProperty("text", out var textElement)
+            ? textElement.GetString() ?? string.Empty
+            : string.Empty;
+        var start = segmentElement.TryGetProperty("start", out var startElement) && startElement.TryGetDouble(out var startSeconds)
+            ? TimeSpan.FromSeconds(startSeconds)
+            : (TimeSpan?)null;
+        var end = segmentElement.TryGetProperty("end", out var endElement) && endElement.TryGetDouble(out var endSeconds)
+            ? TimeSpan.FromSeconds(endSeconds)
+            : (TimeSpan?)null;
+        var speaker = segmentElement.TryGetProperty("speaker", out var speakerElement)
+            ? speakerElement.GetString()
+            : null;
+
+        return new TranscriptSegment { Start = start, End = end, Speaker = speaker, Text = text };
     }
 
     private static string LocateWorkerScript()
