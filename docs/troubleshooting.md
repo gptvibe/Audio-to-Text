@@ -10,7 +10,7 @@ Use the v0.1.1 or newer setup/portable release. It includes `workers\transcripti
 
 ## Smart App Control blocks the portable app
 
-Use v0.1.4 or newer. v0.1.3 used a custom portable launcher that could be blocked by Smart App Control on some Windows 11 systems. v0.1.4 returns to the standard .NET/WinUI portable layout used by v0.1.0 through v0.1.2.
+Use v0.1.4 or newer. v0.1.3 used a custom portable launcher that could be blocked by Smart App Control on some Windows 11 systems. v0.1.4 and newer return to the standard .NET/WinUI portable layout used by v0.1.0 through v0.1.2.
 
 ## faster-whisper is not installed
 
