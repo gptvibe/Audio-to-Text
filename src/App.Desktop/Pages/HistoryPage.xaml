@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="App_Desktop.Pages.HistoryPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Padding="28" ColumnSpacing="18">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="380" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Spacing="18">
+            <StackPanel Spacing="6">
+                <TextBlock Text="History" Style="{StaticResource SectionTitleTextBlockStyle}" />
+                <TextBlock Text="Local transcripts only. Audio files are not stored by the app." Style="{StaticResource MutedTextBlockStyle}" />
+            </StackPanel>
+            <ScrollViewer>
+                <StackPanel x:Name="HistoryStackPanel" Spacing="10" />
+            </ScrollViewer>
+        </StackPanel>
+
+        <Border Grid.Column="1" Style="{StaticResource CardBorderStyle}">
+            <Grid RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Spacing="4">
+                    <TextBlock x:Name="SelectedTitleTextBlock" Text="Select a transcript" FontSize="18" FontWeight="SemiBold" />
+                    <TextBlock x:Name="SelectedMetaTextBlock" Text="Previous transcripts appear here." Style="{StaticResource MutedTextBlockStyle}" />
+                </StackPanel>
+
+                <TextBox
+                    x:Name="TranscriptTextBox"
+                    Grid.Row="1"
+                    AcceptsReturn="True"
+                    TextWrapping="Wrap"
+                    IsReadOnly="True"
+                    PlaceholderText="No transcript selected." />
+
+                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                    <Button Content="Copy" Click="Copy_Click" />
+                    <Button Content="Export .txt" Click="Export_Click" />
+                    <Button Content="Delete" Click="Delete_Click" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Page>

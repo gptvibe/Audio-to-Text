@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "QuietScribe (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "QuietScribe (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+bin/
+obj/
+.vs/
+.idea/
+*.user
+*.suo
+TestResults/
+artifacts/
+*.log
+*.tmp
+*.cache
+workers/transcription-worker/.venv/
+workers/transcription-worker/__pycache__/
+*.pyc
+*.pyo
