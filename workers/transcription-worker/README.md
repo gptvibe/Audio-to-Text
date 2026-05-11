@@ -15,4 +15,6 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-`faster-whisper` is required for v1 file transcription. `pyannote.audio` is optional and only needed for speaker diarization. Some diarization models are gated on Hugging Face, so set `HF_TOKEN` or add a token in the desktop app when that flow is wired for your environment.
+Release builds bundle the core `faster-whisper` runtime under `workers/transcription-worker/python`, so users do not need to install Python for basic transcription.
+
+For development from source, `requirements.txt` installs the core transcription stack. `requirements-diarization.txt` is optional and only needed for speaker diarization. Some diarization models are gated on Hugging Face, so set `HF_TOKEN` or add a token in the desktop app when that flow is wired for your environment.

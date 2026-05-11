@@ -32,8 +32,8 @@ The app reports:
 - AMD/Intel GPU candidates through Windows display adapter detection,
 - Intel NPU candidates through Plug and Play device detection.
 
-The v1 worker uses `faster-whisper` CPU or CUDA if the Python environment supports it. OpenVINO, DirectML, and Intel NPU optimized execution are extension points.
+The release worker bundles Python plus the core `faster-whisper` stack and uses CPU or CUDA if the bundled/runtime libraries support it. OpenVINO, DirectML, and Intel NPU optimized execution are extension points.
 
 ## Diarization
 
-Speaker detection is optional. The worker tries `pyannote.audio` when installed and when `HF_TOKEN` or `HUGGINGFACE_TOKEN` is present. If diarization is unavailable, the app still produces a transcript and labels everything as `Speaker 1` instead of failing transcription.
+Speaker detection is optional and is not bundled in the default release because pyannote/Torch is much larger and often requires gated Hugging Face access. The worker tries `pyannote.audio` when installed and when `HF_TOKEN` or `HUGGINGFACE_TOKEN` is present. If diarization is unavailable, the app still produces a transcript and labels everything as `Speaker 1` instead of failing transcription.

@@ -14,7 +14,20 @@ Run:
 dotnet run --project src/App.Desktop/App.Desktop.csproj -p:RuntimeIdentifier=win-x64
 ```
 
-## Python worker
+## Release build with bundled worker
+
+```powershell
+.\scripts\build-release.ps1
+```
+
+This produces:
+
+- `artifacts\release\QuietScribe-v0.1.1-win-x64-setup.exe`
+- `artifacts\release\QuietScribe-v0.1.1-win-x64-portable.zip`
+
+Both include an embedded Python runtime with the core `faster-whisper` stack installed. The app prefers `workers\transcription-worker\python\python.exe` automatically.
+
+## Python worker for development
 
 ```powershell
 cd workers/transcription-worker
@@ -23,11 +36,11 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-The app launches `python` from `PATH`. If you use a venv, start the app from a shell where that venv is active, or adjust `TranscriptionWorkerClient` to point at the venv Python executable.
+`requirements-diarization.txt` is optional and significantly larger.
 
 ## ffmpeg
 
-`ffmpeg` is recommended for consistent audio extraction from video files:
+`ffmpeg` is optional but useful for edge-case media files:
 
 ```powershell
 winget install Gyan.FFmpeg

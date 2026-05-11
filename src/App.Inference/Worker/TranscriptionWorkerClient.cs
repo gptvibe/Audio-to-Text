@@ -11,10 +11,10 @@ public sealed class TranscriptionWorkerClient : ITranscriptionClient
     private readonly string _workerScriptPath;
     private readonly string _pythonExecutable;
 
-    public TranscriptionWorkerClient(string? workerScriptPath = null, string pythonExecutable = "python")
+    public TranscriptionWorkerClient(string? workerScriptPath = null, string? pythonExecutable = null)
     {
         _workerScriptPath = workerScriptPath ?? LocateWorkerScript();
-        _pythonExecutable = pythonExecutable;
+        _pythonExecutable = pythonExecutable ?? LocatePythonExecutable(_workerScriptPath);
     }
 
     public async Task<TranscriptDocument> TranscribeFileAsync(
@@ -49,8 +49,10 @@ public sealed class TranscriptionWorkerClient : ITranscriptionClient
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
-            CreateNoWindow = true
+            CreateNoWindow = true,
+            WorkingDirectory = Path.GetDirectoryName(_workerScriptPath) ?? AppContext.BaseDirectory
         };
+        ConfigurePythonEnvironment(process.StartInfo);
 
         try
         {
@@ -58,7 +60,9 @@ public sealed class TranscriptionWorkerClient : ITranscriptionClient
         }
         catch (Exception ex)
         {
-            throw new TranscriptionWorkerException("Python could not be started. Install Python 3.10+ and the worker dependencies from workers/transcription-worker/requirements.txt.", ex);
+            throw new TranscriptionWorkerException(
+                $"The transcription runtime could not be started at '{_pythonExecutable}'. Reinstall QuietScribe or use the portable release with the bundled worker runtime.",
+                ex);
         }
 
         using var registration = cancellationToken.Register(() =>
@@ -245,6 +249,34 @@ public sealed class TranscriptionWorkerClient : ITranscriptionClient
         };
 
         return candidates.Select(Path.GetFullPath).FirstOrDefault(File.Exists) ?? candidates[0];
+    }
+
+    private static string LocatePythonExecutable(string workerScriptPath)
+    {
+        var workerDirectory = Path.GetDirectoryName(workerScriptPath) ?? AppContext.BaseDirectory;
+        var candidates = new[]
+        {
+            Path.Combine(workerDirectory, "python", "python.exe"),
+            Path.Combine(workerDirectory, ".venv", "Scripts", "python.exe"),
+            Path.Combine(AppContext.BaseDirectory, "python", "python.exe")
+        };
+
+        return candidates.Select(Path.GetFullPath).FirstOrDefault(File.Exists) ?? "python";
+    }
+
+    private void ConfigurePythonEnvironment(ProcessStartInfo startInfo)
+    {
+        var pythonDirectory = Path.GetDirectoryName(_pythonExecutable);
+        if (!string.IsNullOrWhiteSpace(pythonDirectory) && Directory.Exists(pythonDirectory))
+        {
+            var existingPath = startInfo.Environment.TryGetValue("PATH", out var value)
+                ? value
+                : Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+            startInfo.Environment["PATH"] = string.IsNullOrWhiteSpace(existingPath)
+                ? pythonDirectory
+                : pythonDirectory + Path.PathSeparator + existingPath;
+            startInfo.Environment["PYTHONNOUSERSITE"] = "1";
+        }
     }
 
     private static string Quote(string value)

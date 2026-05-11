@@ -4,13 +4,13 @@
 
 Add a Hugging Face token in Settings, then confirm your Hugging Face account has accepted any gated model terms.
 
-## Transcription says Python could not be started
+## Transcription says the runtime could not be started
 
-Install Python 3.10+ and make sure `python` is on `PATH`. If using a virtual environment, start the app from the activated environment or configure the worker client to use that venv executable.
+Use the v0.1.1 or newer setup/portable release. It includes `workers\transcription-worker\python\python.exe` and the app uses that runtime automatically.
 
 ## faster-whisper is not installed
 
-Run:
+This means the release runtime is incomplete or you are running from source without installing worker dependencies. For source builds, run:
 
 ```powershell
 cd workers/transcription-worker

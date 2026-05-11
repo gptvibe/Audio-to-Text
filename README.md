@@ -20,16 +20,22 @@ No AI chat features are included. Audio and transcripts stay on the device; the 
 
 - Windows 10 1809 or newer, Windows 11 recommended.
 - .NET SDK with WinUI templates installed.
-- Python 3.10+ for transcription.
-- `ffmpeg` on `PATH` is recommended for robust audio/video conversion.
+- Release builds include an embedded Python transcription runtime for core `faster-whisper` transcription.
+- `ffmpeg` on `PATH` is optional. The bundled PyAV stack can decode many common files; ffmpeg can still help with edge-case media.
 
-Install worker dependencies:
+For development from source, install worker dependencies:
 
 ```powershell
 cd workers/transcription-worker
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+```
+
+Build release artifacts with the bundled runtime:
+
+```powershell
+.\scripts\build-release.ps1
 ```
 
 ## Build
