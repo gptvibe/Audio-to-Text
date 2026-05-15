@@ -48,3 +48,27 @@ Errors are reported as:
 ```
 
 This keeps future backends swappable: OpenVINO, DirectML, CUDA-specific runners, or a native engine can implement the same contract.
+
+## Live Transcription Flow
+
+Live mode uses the same layered architecture with a longer-lived worker session:
+
+1. The user chooses a downloaded model and microphone.
+2. `App.Desktop` captures microphone audio through WASAPI and resamples it to 16 kHz mono PCM.
+3. The desktop app keeps a bounded rolling buffer, skips obvious silence, and writes temporary WAV chunks.
+4. `TranscriptionWorkerClient.StartLiveSessionAsync` starts `worker.py live`.
+5. The worker loads the model once and emits `ready`.
+6. The app sends JSONL `chunk` commands over stdin.
+7. The worker emits `live_partial` for revisable text and `live_segment` for stable timestamped lines.
+8. `LiveTranscriptMerger` removes duplicated overlap text and updates the editable transcript.
+9. Stop sends a JSONL `stop` command; the worker emits `live_stopped`, then temporary chunks are cleaned up.
+
+Live events:
+
+```json
+{"event":"ready","backend":"cuda","compute_type":"float16"}
+{"event":"live_partial","chunk_id":4,"text":"current words","latency_ms":830}
+{"event":"live_segment","chunk_id":4,"segment":{"start":2.1,"end":4.8,"text":"Stable words."}}
+{"event":"live_progress","chunk_id":4,"message":"Live transcript updated","latency_ms":830}
+{"event":"live_stopped","audio_position":24.0}
+```

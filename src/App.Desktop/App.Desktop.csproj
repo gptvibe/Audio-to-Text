@@ -8,7 +8,7 @@
     <Product>QuietScribe</Product>
     <Description>Local-first speech-to-text transcription for Windows</Description>
     <Authors>gptvibe</Authors>
-    <Version>0.1.6</Version>
+    <Version>0.2.0</Version>
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x86;x64;ARM64</Platforms>
@@ -57,6 +57,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="*" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="*" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\App.Models\App.Models.csproj" />

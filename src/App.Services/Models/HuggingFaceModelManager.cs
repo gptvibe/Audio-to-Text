@@ -21,7 +21,7 @@ public sealed class HuggingFaceModelManager : IModelManager
         _paths = paths;
         _settingsService = settingsService;
         _httpClient = httpClient ?? new HttpClient();
-        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("QuietScribe/0.1.6");
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("QuietScribe/0.2.0");
     }
 
     public IReadOnlyList<SpeechModelDefinition> GetSupportedModels()

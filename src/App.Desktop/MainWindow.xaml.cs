@@ -75,6 +75,9 @@ public sealed partial class MainWindow : Window
                 case "transcription":
                     NavFrame.Navigate(typeof(HomePage));
                     break;
+                case "live":
+                    NavFrame.Navigate(typeof(LiveTranscriptionPage));
+                    break;
                 case "models":
                     NavFrame.Navigate(typeof(ModelsPage));
                     break;

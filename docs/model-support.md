@@ -4,6 +4,8 @@ The first supported backend is `faster-whisper`, which expects CTranslate2-compa
 
 Default catalog:
 
+- `Systran/faster-whisper-tiny`
+- `Systran/faster-whisper-base`
 - `Systran/faster-whisper-small`
 - `Systran/faster-whisper-medium`
 - `Systran/faster-whisper-large-v3`

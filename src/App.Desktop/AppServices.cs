@@ -30,6 +30,8 @@ public static class AppServices
 
     public static ITranscriptionClient TranscriptionClient { get; } = new TranscriptionWorkerClient();
 
+    public static ILiveTranscriptionClient LiveTranscriptionClient { get; } = new TranscriptionWorkerClient();
+
     public static IExportService ExportService { get; } = new ExportService();
 
     public static IHistoryService HistoryService { get; } = new HistoryService(Paths);

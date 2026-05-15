@@ -1,5 +1,5 @@
 param(
-    [string]$Version = "0.1.6",
+    [string]$Version = "0.2.0",
     [string]$PythonVersion = "3.12.10",
     [switch]$BuildSetup
 )

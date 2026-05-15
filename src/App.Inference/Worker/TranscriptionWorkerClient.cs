@@ -6,7 +6,7 @@ using App.Models.Domain;
 
 namespace App.Inference.Worker;
 
-public sealed class TranscriptionWorkerClient : ITranscriptionClient
+public sealed class TranscriptionWorkerClient : ITranscriptionClient, ILiveTranscriptionClient
 {
     private readonly string _workerScriptPath;
     private readonly string _pythonExecutable;
@@ -145,6 +145,79 @@ public sealed class TranscriptionWorkerClient : ITranscriptionClient
         return transcript;
     }
 
+    public async Task<ILiveTranscriptionSession> StartLiveSessionAsync(
+        string modelPath,
+        TranscriptionOptions options,
+        IProgress<LiveTranscriptionEvent>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (!Directory.Exists(modelPath))
+        {
+            throw new DirectoryNotFoundException("The selected transcription model is missing. Download or redownload the model first.");
+        }
+
+        if (!File.Exists(_workerScriptPath))
+        {
+            throw new FileNotFoundException("The transcription worker script is missing.", _workerScriptPath);
+        }
+
+        progress?.Report(new LiveTranscriptionEvent
+        {
+            Kind = LiveTranscriptionEventKind.Progress,
+            Message = "Starting live transcription worker"
+        });
+
+        var process = new Process();
+        process.StartInfo = new ProcessStartInfo
+        {
+            FileName = _pythonExecutable,
+            Arguments = BuildLiveArguments(modelPath, options),
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WorkingDirectory = Path.GetDirectoryName(_workerScriptPath) ?? AppContext.BaseDirectory
+        };
+        ConfigurePythonEnvironment(process.StartInfo);
+
+        try
+        {
+            process.Start();
+        }
+        catch (Exception ex)
+        {
+            process.Dispose();
+            throw new TranscriptionWorkerException(
+                $"The transcription runtime could not be started at '{_pythonExecutable}'. Reinstall QuietScribe or use the portable release with the bundled worker runtime.",
+                ex);
+        }
+
+        var session = new LiveWorkerProcessSession(process, progress);
+        using var registration = cancellationToken.Register(static state =>
+        {
+            if (state is LiveWorkerProcessSession liveSession)
+            {
+                liveSession.Cancel();
+            }
+        }, session);
+
+        session.StartReading(cancellationToken);
+
+        try
+        {
+            await session.Ready.WaitAsync(cancellationToken);
+            return session;
+        }
+        catch
+        {
+            await session.DisposeAsync();
+            throw;
+        }
+    }
+
     private string BuildArguments(string sourcePath, string modelPath, TranscriptionOptions options)
     {
         var args = new List<string>
@@ -180,6 +253,32 @@ public sealed class TranscriptionWorkerClient : ITranscriptionClient
                 args.Add("--speakers");
                 args.Add(options.Diarization.ExpectedSpeakers.Value.ToString(CultureInfo.InvariantCulture));
             }
+        }
+
+        return string.Join(" ", args);
+    }
+
+    private string BuildLiveArguments(string modelPath, TranscriptionOptions options)
+    {
+        var args = new List<string>
+        {
+            Quote(_workerScriptPath),
+            "live",
+            "--model",
+            Quote(modelPath),
+            "--mode",
+            options.PerformanceMode.ToString()
+        };
+
+        if (!string.IsNullOrWhiteSpace(options.Language))
+        {
+            args.Add("--language");
+            args.Add(Quote(options.Language));
+        }
+
+        if (options.TranslateToEnglish)
+        {
+            args.Add("--translate");
         }
 
         return string.Join(" ", args);

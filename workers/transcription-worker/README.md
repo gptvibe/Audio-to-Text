@@ -6,6 +6,19 @@ This worker keeps ML dependencies out of the WinUI process. It speaks JSON Lines
 - `result` returns transcript segments.
 - `error` gives a user-friendly failure message.
 
+File transcription uses `worker.py transcribe`, which starts, processes one file, emits a final result, and exits.
+
+Live microphone transcription uses `worker.py live`. It loads the selected model once, reads JSON chunk commands from stdin, and emits:
+
+- `ready`
+- `live_partial`
+- `live_segment`
+- `live_progress`
+- `live_error`
+- `live_stopped`
+
+Live chunks are temporary 16 kHz mono PCM WAV files created by the desktop app. The worker does not capture microphone audio directly.
+
 ## Setup
 
 ```powershell

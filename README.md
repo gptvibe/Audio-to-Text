@@ -2,7 +2,7 @@
 
 A local-first Windows speech-to-text desktop app built with WinUI 3, C#/.NET, and a swappable Python inference worker.
 
-The v1 path focuses on reliable local file transcription:
+The v1 path focuses on reliable local transcription:
 
 - Modern WinUI 3 shell with New Transcription, Models, History, and Settings.
 - Hugging Face model browsing, custom repo IDs, resumable downloads, validation, delete, and open-folder actions.
@@ -10,6 +10,7 @@ The v1 path focuses on reliable local file transcription:
 - CPU/GPU/NPU detection that never blocks CPU fallback.
 - Drag-and-drop or file-picker transcription for common audio/video formats.
 - Background Python worker for `faster-whisper` transcription.
+- Live Transcription mode with microphone selection, WASAPI capture, partial text updates, stable timestamped segments, pause/resume, copy, clear, and `.txt` export.
 - Optional speaker-label mode when diarization dependencies and gated Hugging Face access are available.
 - Transcript editor with search, copy, speaker renaming, local history, and `.txt` export.
 - Local app data, logs, settings, model cache, and diagnostics.
@@ -51,6 +52,12 @@ Run from source:
 ```powershell
 dotnet run --project src/App.Desktop/App.Desktop.csproj -p:RuntimeIdentifier=win-x64
 ```
+
+## Live Transcription
+
+Open **Live Transcription**, choose a downloaded faster-whisper model, choose a microphone, and press **Start**. The app captures 16 kHz mono PCM audio locally, sends rolling WAV chunks to a persistent `worker.py live` process, and shows partial text while stable segments are committed into the transcript.
+
+Tiny, base, and small faster-whisper models are recommended for live mode. Larger models can improve accuracy, but may lag unless CUDA or a fast CPU is available. Live speaker diarization is not required; existing speaker detection remains a file/post-processing workflow. See [docs/live-transcription.md](docs/live-transcription.md) for latency, hardware, and protocol notes.
 
 ## Project Structure
 

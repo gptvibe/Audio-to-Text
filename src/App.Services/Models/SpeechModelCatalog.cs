@@ -8,6 +8,28 @@ public static class SpeechModelCatalog
     [
         new()
         {
+            RepoId = "Systran/faster-whisper-tiny",
+            DisplayName = "Whisper Tiny",
+            Family = "faster-whisper",
+            SizeEstimate = "~75 MB",
+            LanguageSupport = "Multilingual",
+            SpeedEstimate = "Very fast",
+            QualityEstimate = "Basic",
+            Notes = "Best for low-latency live transcription on CPU-bound machines."
+        },
+        new()
+        {
+            RepoId = "Systran/faster-whisper-base",
+            DisplayName = "Whisper Base",
+            Family = "faster-whisper",
+            SizeEstimate = "~150 MB",
+            LanguageSupport = "Multilingual",
+            SpeedEstimate = "Very fast",
+            QualityEstimate = "Fair",
+            Notes = "A practical live transcription model when speed matters more than maximum accuracy."
+        },
+        new()
+        {
             RepoId = "Systran/faster-whisper-small",
             DisplayName = "Whisper Small",
             Family = "faster-whisper",
