@@ -1,5 +1,5 @@
 #define MyAppName "QuietScribe"
-#define MyAppVersion "0.2.0"
+#define MyAppVersion "0.2.1"
 #define MyAppPublisher "gptvibe"
 #define MyAppExeName "QuietScribe.exe"
 #define PublishDir "..\artifacts\publish\QuietScribe-win-x64"
