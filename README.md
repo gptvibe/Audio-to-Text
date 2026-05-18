@@ -4,7 +4,7 @@ A local-first Windows speech-to-text desktop app built with WinUI 3, C#/.NET, an
 
 The v1 path focuses on reliable local transcription:
 
-- Modern WinUI 3 shell with New Transcription, Models, History, and Settings.
+- Modern WinUI 3 shell with a persistent local transcript sidebar, New Transcription, Live Transcription, Models, and Settings.
 - Hugging Face model browsing, custom repo IDs, resumable downloads, validation, delete, and open-folder actions.
 - Secure Hugging Face token storage through Windows Credential Manager.
 - CPU/GPU/NPU detection that never blocks CPU fallback.
@@ -12,7 +12,7 @@ The v1 path focuses on reliable local transcription:
 - Background Python worker for `faster-whisper` transcription.
 - Live Transcription mode with microphone selection, WASAPI capture, partial text updates, stable timestamped segments, pause/resume, copy, clear, and `.txt` export.
 - Optional speaker-label mode when diarization dependencies and gated Hugging Face access are available.
-- Transcript editor with search, copy, speaker renaming, local history, and `.txt` export.
+- Transcript editor with search, copy, speaker renaming, local history loading, delete, and `.txt` export.
 - Local app data, logs, settings, model cache, and diagnostics.
 
 No AI chat features are included. Audio and transcripts stay on the device; the network is used only for model downloads.

@@ -8,6 +8,7 @@ using App.Core.Contracts;
 using App.Models.Domain;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Navigation;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
 using Windows.Storage.Pickers;
@@ -26,6 +27,7 @@ public sealed partial class HomePage : Page
     private LocalModelInfo? _selectedLocalModel;
     private TranscriptDocument? _currentTranscript;
     private string? _currentHistoryId;
+    private string? _pendingHistoryItemId;
     private bool _hasLoaded;
     private readonly List<TranscriptSegment> _streamingSegments = [];
 
@@ -33,6 +35,20 @@ public sealed partial class HomePage : Page
     {
         InitializeComponent();
         Loaded += HomePage_Loaded;
+    }
+
+    public event EventHandler? HistoryChanged;
+
+    protected override async void OnNavigatedTo(NavigationEventArgs e)
+    {
+        base.OnNavigatedTo(e);
+
+        _pendingHistoryItemId = e.Parameter as string;
+        if (_hasLoaded && !string.IsNullOrWhiteSpace(_pendingHistoryItemId))
+        {
+            await LoadHistoryItemAsync(_pendingHistoryItemId);
+            _pendingHistoryItemId = null;
+        }
     }
 
     private async void HomePage_Loaded(object sender, RoutedEventArgs e)
@@ -57,6 +73,59 @@ public sealed partial class HomePage : Page
 
         await RefreshDeviceSummaryAsync();
         await RefreshSelectedModelAsync();
+
+        if (!string.IsNullOrWhiteSpace(_pendingHistoryItemId))
+        {
+            await LoadHistoryItemAsync(_pendingHistoryItemId);
+            _pendingHistoryItemId = null;
+            return;
+        }
+
+        UpdateStartButton();
+    }
+
+    public async Task LoadHistoryItemAsync(string id)
+    {
+        var item = await _historyService.GetAsync(id);
+        if (item is null)
+        {
+            await ShowErrorAsync("Transcript not found", "The selected history item is no longer available.");
+            HistoryChanged?.Invoke(this, EventArgs.Empty);
+            return;
+        }
+
+        await LoadHistoryItemAsync(item);
+    }
+
+    public async Task LoadHistoryItemAsync(HistoryItem item)
+    {
+        _currentHistoryId = item.Id;
+        _currentTranscript = item.Transcript with
+        {
+            SourceName = item.Transcript.SourceName ?? item.SourceName,
+            ModelRepoId = item.Transcript.ModelRepoId ?? item.ModelRepoId,
+            Language = item.Transcript.Language ?? item.Language,
+            Duration = item.Transcript.Duration ?? item.Duration
+        };
+        _streamingSegments.Clear();
+        _streamingSegments.AddRange(_currentTranscript.Segments);
+
+        _selectedFilePath = _currentTranscript.SourcePath;
+        SelectedFileTextBox.Text = string.IsNullOrWhiteSpace(_selectedFilePath)
+            ? item.SourceName
+            : _selectedFilePath;
+
+        SelectLanguage(_currentTranscript.Language);
+        SelectOutputMode(item.DiarizationEnabled);
+        await SelectModelAsync(_currentTranscript.ModelRepoId);
+
+        CurrentTaskTextBlock.Text = $"Loaded {item.SourceName}";
+        TaskProgressBar.IsIndeterminate = false;
+        TaskProgressBar.Value = 0;
+        DeleteHistoryButton.IsEnabled = true;
+        DeleteHistoryButton.Visibility = Visibility.Visible;
+
+        RenderTranscript();
         UpdateStartButton();
     }
 
@@ -216,6 +285,9 @@ public sealed partial class HomePage : Page
         TranscriptTextBox.Text = string.Empty;
         SpeakerNamesPanel.Children.Clear();
         _streamingSegments.Clear();
+        _currentHistoryId = null;
+        DeleteHistoryButton.IsEnabled = false;
+        DeleteHistoryButton.Visibility = Visibility.Collapsed;
 
         try
         {
@@ -406,6 +478,8 @@ public sealed partial class HomePage : Page
         SpeakerNamesPanel.Children.Clear();
         CurrentTaskTextBlock.Text = "Ready";
         TaskProgressBar.Value = 0;
+        DeleteHistoryButton.IsEnabled = false;
+        DeleteHistoryButton.Visibility = Visibility.Collapsed;
     }
 
     private async void ExportTxt_Click(object sender, RoutedEventArgs e)
@@ -471,6 +545,40 @@ public sealed partial class HomePage : Page
         await RunTranscriptionAsync();
     }
 
+    private async void DeleteHistory_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentHistoryId is null)
+        {
+            return;
+        }
+
+        var dialog = new ContentDialog
+        {
+            Title = "Delete transcript?",
+            Content = "The transcript history entry will be removed. Audio files are not affected.",
+            PrimaryButtonText = "Delete",
+            CloseButtonText = "Cancel",
+            XamlRoot = XamlRoot
+        };
+
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary)
+        {
+            return;
+        }
+
+        await _historyService.DeleteAsync(_currentHistoryId);
+        _currentTranscript = null;
+        _currentHistoryId = null;
+        _streamingSegments.Clear();
+        TranscriptTextBox.Text = string.Empty;
+        SpeakerNamesPanel.Children.Clear();
+        CurrentTaskTextBlock.Text = "Deleted transcript";
+        TaskProgressBar.Value = 0;
+        DeleteHistoryButton.IsEnabled = false;
+        DeleteHistoryButton.Visibility = Visibility.Collapsed;
+        HistoryChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     private async Task SaveHistoryAsync(TranscriptionOptions options)
     {
         if (_currentTranscript is null || _selectedFilePath is null)
@@ -489,6 +597,9 @@ public sealed partial class HomePage : Page
             DiarizationEnabled = options.Diarization.IsEnabled,
             Transcript = _currentTranscript
         });
+        DeleteHistoryButton.IsEnabled = true;
+        DeleteHistoryButton.Visibility = Visibility.Visible;
+        HistoryChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private async Task RememberExportFolderAsync(string exportPath)
@@ -511,6 +622,46 @@ public sealed partial class HomePage : Page
         StartButton.IsEnabled = _transcriptionCts is null
             && !string.IsNullOrWhiteSpace(_selectedFilePath)
             && _selectedLocalModel?.Status == ModelDownloadStatus.Downloaded;
+    }
+
+    private async Task SelectModelAsync(string? repoId)
+    {
+        if (string.IsNullOrWhiteSpace(repoId))
+        {
+            return;
+        }
+
+        var model = _modelManager.GetSupportedModels()
+            .FirstOrDefault(candidate => candidate.RepoId.Equals(repoId, StringComparison.OrdinalIgnoreCase));
+        if (model is not null)
+        {
+            ModelComboBox.SelectedItem = model;
+            await RefreshSelectedModelAsync();
+            return;
+        }
+
+        _selectedLocalModel = await _modelManager.GetLocalModelAsync(repoId);
+    }
+
+    private void SelectLanguage(string? language)
+    {
+        foreach (var item in LanguageComboBox.Items.OfType<ComboBoxItem>())
+        {
+            if (string.Equals(item.Tag?.ToString(), language ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+            {
+                LanguageComboBox.SelectedItem = item;
+                return;
+            }
+        }
+
+        LanguageComboBox.SelectedIndex = 0;
+    }
+
+    private void SelectOutputMode(bool diarizationEnabled)
+    {
+        OutputModeComboBox.SelectedItem = diarizationEnabled
+            ? TranscriptOutputMode.SpeakersAndTimestamps
+            : TranscriptOutputMode.Timestamps;
     }
 
     private static IReadOnlyDictionary<string, string> BuildSpeakerNames(IEnumerable<TranscriptSegment> segments)

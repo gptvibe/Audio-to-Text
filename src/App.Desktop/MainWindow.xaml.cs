@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using WinRT.Interop;
 using App_Desktop.Pages;
+using App_Desktop.Controls;
 using App.Models.Domain;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -16,6 +17,11 @@ namespace App_Desktop;
 
 public sealed partial class MainWindow : Window
 {
+    private const double WideLayoutThreshold = 900;
+    private const double SidebarExpandedWidth = 304;
+    private bool _isSidebarOpenOnNarrow;
+    private HomePage? _currentHomePage;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -24,6 +30,7 @@ public sealed partial class MainWindow : Window
         SetTitleBar(AppTitleBar);
         AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
         ApplyWindowIcon();
+        NavFrame.Navigated += NavFrame_Navigated;
         NavFrame.Navigate(typeof(HomePage));
         RootGrid.Loaded += MainWindow_Loaded;
     }
@@ -54,45 +61,107 @@ public sealed partial class MainWindow : Window
 
     private void TitleBar_PaneToggleRequested(TitleBar sender, object args)
     {
-        NavView.IsPaneOpen = !NavView.IsPaneOpen;
+        if (ShellGrid.ActualWidth >= WideLayoutThreshold)
+        {
+            return;
+        }
+
+        _isSidebarOpenOnNarrow = !_isSidebarOpenOnNarrow;
+        UpdateSidebarLayout();
     }
 
     private void TitleBar_BackRequested(TitleBar sender, object args)
     {
-        NavFrame.GoBack();
+        if (NavFrame.CanGoBack)
+        {
+            NavFrame.GoBack();
+        }
     }
 
-    private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    private void HistorySidebar_NewTranscriptionRequested(object sender, EventArgs e)
     {
-        if (args.IsSettingsSelected)
+        NavigateToHome();
+        CloseSidebarOnNarrow();
+    }
+
+    private void HistorySidebar_HistoryItemSelected(object sender, HistoryItemSelectedEventArgs e)
+    {
+        NavigateToHome(e.Item.Id);
+        CloseSidebarOnNarrow();
+    }
+
+    private void HistorySidebar_NavigationRequested(object sender, SidebarNavigationRequestedEventArgs e)
+    {
+        switch (e.Route)
         {
-            NavFrame.Navigate(typeof(SettingsPage));
+            case "live":
+                NavFrame.Navigate(typeof(LiveTranscriptionPage));
+                break;
+            case "models":
+                NavFrame.Navigate(typeof(ModelsPage));
+                break;
+            case "settings":
+                NavFrame.Navigate(typeof(SettingsPage));
+                break;
+            default:
+                throw new InvalidOperationException($"Unknown navigation route: {e.Route}");
         }
-        else if (args.SelectedItem is NavigationViewItem item)
+
+        CloseSidebarOnNarrow();
+    }
+
+    private void NavigateToHome(string? historyItemId = null)
+    {
+        NavFrame.Navigate(typeof(HomePage), historyItemId);
+    }
+
+    private void NavFrame_Navigated(object sender, Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+    {
+        if (_currentHomePage is not null)
         {
-            switch (item.Tag)
-            {
-                case "transcription":
-                    NavFrame.Navigate(typeof(HomePage));
-                    break;
-                case "live":
-                    NavFrame.Navigate(typeof(LiveTranscriptionPage));
-                    break;
-                case "models":
-                    NavFrame.Navigate(typeof(ModelsPage));
-                    break;
-                case "history":
-                    NavFrame.Navigate(typeof(HistoryPage));
-                    break;
-                default:
-                    throw new InvalidOperationException($"Unknown navigation item tag: {item.Tag}");
-            }
+            _currentHomePage.HistoryChanged -= HomePage_HistoryChanged;
         }
+
+        _currentHomePage = NavFrame.Content as HomePage;
+        if (_currentHomePage is not null)
+        {
+            _currentHomePage.HistoryChanged += HomePage_HistoryChanged;
+        }
+    }
+
+    private async void HomePage_HistoryChanged(object? sender, EventArgs e)
+    {
+        await HistorySidebarControl.RefreshAsync();
+    }
+
+    private void ShellGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        UpdateSidebarLayout();
+    }
+
+    private void UpdateSidebarLayout()
+    {
+        var isWide = ShellGrid.ActualWidth >= WideLayoutThreshold;
+        AppTitleBar.IsPaneToggleButtonVisible = !isWide;
+        SidebarColumn.Width = new GridLength(isWide || _isSidebarOpenOnNarrow ? SidebarExpandedWidth : 0);
+        SidebarHost.Visibility = isWide || _isSidebarOpenOnNarrow ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void CloseSidebarOnNarrow()
+    {
+        if (ShellGrid.ActualWidth >= WideLayoutThreshold)
+        {
+            return;
+        }
+
+        _isSidebarOpenOnNarrow = false;
+        UpdateSidebarLayout();
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
         ApplyWindowIcon();
+        UpdateSidebarLayout();
 
         var settings = await AppServices.Settings.LoadAsync();
         ApplyTheme(settings.Theme);

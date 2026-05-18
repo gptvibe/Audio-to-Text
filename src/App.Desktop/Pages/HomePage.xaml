@@ -153,12 +153,14 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel x:Name="SpeakerNamesPanel" Orientation="Horizontal" Spacing="8" />
                                 <Button Grid.Column="1" Content="Copy" Click="CopyTranscript_Click" />
                                 <Button Grid.Column="2" Content="Clear" Click="ClearTranscript_Click" />
                                 <Button Grid.Column="3" Content="Re-run" Click="Rerun_Click" />
                                 <Button Grid.Column="4" Content="Export .txt" Click="ExportTxt_Click" />
+                                <Button x:Name="DeleteHistoryButton" Grid.Column="5" Content="Delete" Click="DeleteHistory_Click" IsEnabled="False" Visibility="Collapsed" />
                             </Grid>
                         </Grid>
                     </Border>
